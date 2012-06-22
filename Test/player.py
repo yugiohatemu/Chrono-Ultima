@@ -21,7 +21,7 @@ while 1:
     for event in pygame.event.get():         
         if event.type == QUIT: 
             sys.exit()
-        if event.type == KEYDOWN:
+        elif event.type == KEYDOWN:
             if event.key == K_LEFT: 
                 move_x = -1
             elif event.key == K_RIGHT: 
@@ -34,11 +34,10 @@ while 1:
                 Crono.add_bullet()
             elif event.key == K_p:
                 pause = not pause
-                
-        elif event.type == KEYUP: 
+        elif event.type == KEYUP:
             if event.key == K_LEFT or event.key == K_RIGHT:
-                move_x = 0 
-            elif event.key == K_UP or event.key == K_DOWN:
+                move_x = 0             
+            elif event.key == K_UP or event.key == K_DOWN: 
                 move_y = 0
              
     #update position

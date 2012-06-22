@@ -9,9 +9,7 @@ size = width, height = 320, 480
 pause = False
 
 screen = pygame.display.set_mode(size) 
-time_passed = 0
-move_x = 0
-move_y = 0
+move_x,move_y = 0,0 
 player_info = {'name':'Crono.gif','spawn_point':[140,400],\
         'bullet':{'name':'Masamune.gif','attack_pattern':(0,-4),'spawn_pattern':(0,-5)}}
 new_game = GameMaster(player_info)
@@ -27,7 +25,7 @@ while 1:
     for event in pygame.event.get():         
         if event.type == QUIT: 
             sys.exit()
-        if event.type == KEYDOWN:
+        elif event.type == KEYDOWN:
             if event.key == K_LEFT: 
                 move_x = -1
             elif event.key == K_RIGHT: 
@@ -40,6 +38,11 @@ while 1:
                 new_game.player.add_bullet()
             elif event.key == K_p:
                 pause = not pause
+        elif event.type == KEYUP:
+            if event.key == K_LEFT or event.key == K_RIGHT:
+                move_x = 0             
+            elif event.key == K_UP or event.key == K_DOWN: 
+                move_y = 0
     
     if enough_level_info:
         if pygame.time.get_ticks() >= next_event_time:
@@ -50,14 +53,15 @@ while 1:
     #also paused time does not afftect pygame time...may need to replace this with clock in
     #order to control
     if not pause:
-        time_passed += clock.tick(30)
-        if time_passed >= 1000:
-            for enemy in new_game.enemy_batch:
-                enemy.add_bullet()
-            time_passed = 0
+        time_passed = clock.tick(30)
+        for enemy in new_game.enemy_batch:
+            enemy.add_bullet(time_passed)
         new_game.update_self((move_x,move_y))
-            
-    screen.fill((0,0,0)) 
+    
+    new_game.is_collided()
+    
+    screen.fill((0,0,0))
+    #if new_game.is_alive():
     new_game.draw_self(screen)
                
     pygame.display.update()

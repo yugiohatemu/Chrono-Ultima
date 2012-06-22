@@ -125,10 +125,10 @@ class VectorBullet:
 				self.bullet_batch.remove(one_bullet)
 	
 	def is_collided(self,target):	
-		for one_batch in self.bullet_batch:
-			crush_index = traget.collidelist(one_batch)
-			if crush_index != -1:
-				return True
+		crush_index = target.collidelist(self.bullet_batch)
+		if crush_index != -1:
+			return True
+		else:
 			return False
 	
 	def add_bullet_with_spawn_location(self,spawn_point):
@@ -143,22 +143,38 @@ class VectorBullet:
 			
 class Player:
 	def __init__(self, info):	
-		self.image = pygame.image.load(info['name'])
+		animationInfo =  {'up':'Crono.gif','left':'Crono-Left.gif','right':'Crono-Right.gif'}
+		self.animation = {}
+		#for event, frame in info['anmiation'].items():
+		for event, frame in animationInfo.items():
+			self.animation[event] = pygame.image.load(frame)
+		self.current_image = self.animation['up']
+		self.base_rect = self.current_image.get_rect() 
+		
+		
 		self.base_rect = self.image.get_rect()
 		self.base_rect.center = info['spawn_point']
 		self.bullets = VectorBullet(info['bullet'])				
-
+	
 	def update_self(self,move_point):
+		move_x = move_point[0]
 		self.base_rect.move_ip(move_point)
-		self.bullets.update_self()	
-		
+		if move_x < 0:
+			self.current_image = self.animation['left']
+		elif move_x == 0:
+			self.current_image = self.animation['up']
+		else:
+			self.current_image = self.animation['right']
+
+	
 	def add_bullet(self):
 		self.bullets.add_bullet_with_spawn_location(self.base_rect.center)	
-		
-	def draw_self(self,screen = None):
-		screen.blit(self.image, self.base_rect)
-		self.bullets.draw_self(screen)
 	
+	def draw_self(self,screen = None):
+		screen.blit(self.current_image, self.base_rect)
+		self.bullets.draw_self(screen)
+						
+						
 	def is_collided(self,target):
 		if self.base_rect.colliderect(target) or self.bullets.is_collided(target):
 			return True
@@ -176,6 +192,8 @@ class Enemy:
 		self.base_rect.center = info['spawn_point']
 		self.move_pattern = info['move_pattern']
 		self.bullets = VectorBullet(info['bullet'])
+		self.inner_timer = 0
+		self.shoot_timer = 1000 #info
 		
 	def update_self(self):
 		topright = self.base_rect.topright 
@@ -191,8 +209,11 @@ class Enemy:
 		screen.blit(self.image, self.base_rect)
 		self.bullets.draw_self(screen)
 		
-	def add_bullet(self):
-		self.bullets.add_bullet_with_spawn_location(self.base_rect.center)
+	def add_bullet(self,passed_time=0):
+		self.inner_timer += passed_time
+		if self.inner_timer > self.shoot_timer:
+			self.bullets.add_bullet_with_spawn_location(self.base_rect.center)
+			self.inner_timer = 0
 		
 	def is_collided(self,target):
 		if self.base_rect.colliderect(target) or self.bullets.is_collided(target):
@@ -208,13 +229,13 @@ class Enemy:
 class Level:
 	def __init__(self): #again, should be initialize by info builder
 		
-		self.inc_order = [(5.0, ( {'name':'Kitty.gif','spawn_point':[200,100],'move_pattern':[1,0],\
+		self.inc_order = [(5.0, ( {'name':'Kitty.gif','spawn_point':[100,100],'move_pattern':[1,0],\
         'bullet':{'name':'Masamune.gif','attack_pattern':(0,4),'spawn_pattern':(0,5)}}, \
-		{'name':'Kitty.gif','spawn_point':[200,100],'move_pattern':[1,0],\
+		{'name':'Kitty.gif','spawn_point':[200,150],'move_pattern':[1,0],\
         'bullet':{'name':'Masamune.gif','attack_pattern':(0,4),'spawn_pattern':(0,5)}} ) ),\
-				(15.0,({'name':'Kitty.gif','spawn_point':[200,100],'move_pattern':[1,0],\
+				(15.0,({'name':'Kitty.gif','spawn_point':[200,250],'move_pattern':[1,0],\
         'bullet':{'name':'Masamune.gif','attack_pattern':(0,4),'spawn_pattern':(0,5)}} ,\
-		{'name':'Kitty.gif','spawn_point':[200,100],'move_pattern':[1,0],\
+		{'name':'Kitty.gif','spawn_point':[200,200],'move_pattern':[1,0],\
         'bullet':{'name':'Masamune.gif','attack_pattern':(0,4),'spawn_pattern':(0,5)}}))]																
 		
 	def create_enemy_batch(self):
@@ -246,15 +267,21 @@ class GameMaster:
 	def __init__(self,info):
 		self.player = Player(info)
 		self.enemy_batch = []
-
-		
+	
+	def is_game_over(self):
+		if self.player == None: #check for life later
+			return True
+		else:
+			return False
+	
 	def add_enemy(self,add_enemy):
 		self.enemy_batch.extend(add_enemy)
                                                 
 	def draw_self(self,screen):
-		self.player.draw_self(screen)
-		for enemy in self.enemy_batch:
-			enemy.draw_self(screen)
+		if self.player !=None:
+			self.player.draw_self(screen)
+			for enemy in self.enemy_batch:
+				enemy.draw_self(screen)
 	
 	def update_self(self,move_point):
 		if self.player != None:
@@ -264,14 +291,24 @@ class GameMaster:
 			if out_of_screen(enemy.base_rect):
 				self.enemy_batch.remove(enemy)
 	
+	def is_alive(self):
+		if self.player == None:
+			return False
+		else:
+			return True
+	
 	def is_collided(self):
-		for enemy in self.enemy_batch:
-			if enemy.is_collided(self.player.base_rect):
-				player = None #inform game over or lose one life
-				#do crushing anmitation
-		for enemy in self.enemy_batch:
-			if self.player.bullets.is_collided(enemy.base_rect):
-				self.enemy_batch.remove(enemy)
+		if self.player != None:
+			for enemy in self.enemy_batch:
+				if enemy.is_collided(self.player.base_rect):
+					self.player = None #inform game over or lose one life
+					print 'Player dead'
+					return 
+				
+			for enemy in self.enemy_batch:
+				if self.player.bullets.is_collided(enemy.base_rect):
+					self.enemy_batch.remove(enemy)
+					print 'enemy dead'
 				
 	
 	def __str__(self):
