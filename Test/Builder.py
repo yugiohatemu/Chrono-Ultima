@@ -54,46 +54,154 @@ class BulletPattern:
 	def __str__(self):
 		return 'Construct Bullet Pattern for NPC or Player'
 
-'''
-class Bullets:  #add info for customizing initialization
-	def __init__(self):
-		self.name = 'xx.png'
-		#self.pattern = BulletPattern()
-		self.speed = 1.0
-        #self.spawn_point ??
-		#self.attack_power = 1.0
+class SpreadBullet:
+	def __init__(self, info):
+		self.image = pygame.image.load(info['name'])
+        	self.base_rect = self.image.get_rect()
+        	self.attack_pattern = info['attack_pattern']#attack ((5,3),(5,4),(5,5),(x, y))
+        	self.spawn_pattern = info['spawn_pattern'] #((5,3),(5,4),(5,5),(x, y))
+        	self.bullet_batch = []
+    
+    	def add_bullet_with_spawn_location(self,spawn_location = self.base_rect.center):
+    	    	one_batch = []
+    	    	for pattern in self.spawn_pattern:
+    	    		new_bullet = self.base_rect.copy()
+    	    	    	new_bullet.center = spawn_point
+    	    		new_bullet.move_ip(pattern)
+    	    		one_batch.append(new_bullet)
+    	    	self.bullet_batch.append(one_batch)
+    	    #note: append or extend depends on the complexity of attack_patter
+    	def draw_self(self,screen = None):
+		for one_batch in self.bullet_batch:
+			for one_bullet in one_batch:
+				screen.blit(self.image, one_bullet)
+
+    	def update_self(self):
+    		for one_batch in self.bullet_batch:
+    			num_of_bullet = len(one_batch)
+    			for i in range(num_of_bullet):
+    				one_batch[i].move_ip(self.attack_pattern)
+    				if out_of_screen(one_bullet):					
+    					one_batch[i].remove(one_bullet)
+    			num_of_bullet = len(one_batch)
+    			if num_of_bullet == 0:
+    				self.bullet_batch.remove(one_batch)
+
+	def is_collided(self,target):
+		for one_batch in self.bullet_batch:
+			crush_index = target.collidelist(one_batch)
+			if crush_index != -1:
+				return True
+			else:
+				return False    	
+    	    	    
+    	    	    
+
+class WaveBullet: #for only one side... and not randomnized.......
+	def __init__(self, info):
+		self.image = pygame.image.load(info['name'])
+		self.base_rect = self.image.get_rect()
+		self.base_rect.center = info['spawn_center'] #bottom middle, left middle , right middle or up middle
+		self.attack_pattern = info['attack_pattern']
+		self.spawn_pattern = info['spawn_pattern'] #((-5,5),(-3,5),(0,5),(3, 5),(5,5))
 		self.bullet_batch = []
-        #self.bullet_type = VectorBullet
-        #use fly weight to save processing speed
-		
-	def update_bullet_with_pattern(self,bullet=None):
-		#x,y = bullet
-		pass
 	
-	def update_self(self): 
-        #array of arry divide by pattern
-		#for i in bullets_batch.count():
-		#	for bullet in bullets_batch[i]:
-		#		self.update_bullet_with_pattern(bullet)
-		pass
-    
-    
+	def add_bullet(self):
+		one_batch = []
+		for pattern in self.spawn_pattern:
+			new_bullet = self.base_rect.copy()
+    	    	    	new_bullet.center = spawn_point
+    	    	    	new_bullet.move_ip(pattern)
+    	    	    	one_batch.append(new_bullet)
+    	    	 self.bullet_batch.append(one_batch)
+    	
+    	def draw_self(self):
+    		for one_batch in self.bullet_batch:
+    			for one_bullet in one_batch:
+    				screen.blit(self.image, one_bullet)
+    	
+    	def update_self(self):
+    		for one_batch in self.bullet_batch:
+    			num_of_bullet = len(one_batch)
+    			for i in range(num_of_bullet):
+    				one_batch[i].move_ip(self.attack_pattern)
+    				if out_of_screen(one_bullet):					
+    					one_batch[i].remove(one_bullet)
+    			num_of_bullet = len(one_batch)
+    			if num_of_bullet == 0:
+    				self.bullet_batch.remove(one_batch)
 
-	def draw_self(self):
-		pass #pygame load image
+	def is_collided(self,target):
+		for one_batch in self.bullet_batch:
+			crush_index = target.collidelist(one_batch)
+			if crush_index != -1:
+				return True
+			else:
+				return False   
+				
+				
+
+def BounceBullet: 
+	#basically SpreadBullet but change the attack to be bounce and the out of screen function or change the draw function
+	def __init__(self, info):
+		self.image = pygame.image.load(info['name'])
+		#can add animation here after bouncing
+		self.base_rect = self.image.get_rect()
+		self.attack_pattern = info['attack_pattern']
+		self.spawn_pattern = info['spawn_pattern'] #not needed?
+		self.bounce_limit = info['bounce_limit']
+		'''
+		Remeber to define this based on bount limit
+		'''
+		self.bullet_batch = []
 	
-	def __str__(self):
-		return 'Construct basic Bullet info'
+	def add_bullet_with_spawn_location(self,spawn_location):
+    	    one_batch = []
+    	    for pattern in self.spawn_pattern:
+    	    	    new_bullet = self.base_rect.copy()
+    	    	    new_bullet.center = spawn_point
+    	    	    new_bullet.move_ip(pattern)
+    	    	    one_batch.append(new_bullet)
+    	    self.bullet_batch.append(one_batch)
+    	    #note: append or extend depends on the complexity of attack_patter
+    	    
+    	def draw_self(self,screen = None):
+    		for one_batch in self.bullet_batch:
+    			for one_bullet in one_batch:
+    				screen.blit(self.image, one_bullet)
+    				
+    	
+    	def update_self(self):
+    		for one_batch in self.bullet_batch:
+    			num_of_bullet = len(one_batch)
+    			for i in range(num_of_bullet):
+    				'''
+    				Remeber to implement the bound function
+    				'''
+    				if in_the_bound(one_batch[i],self.bounce_limit):
+    					one_batch[i].move_ip(self.attack_pattern)
+    				if out_of_screen(one_bullet):					
+    					one_batch[i].remove(one_bullet)
+    			num_of_bullet = len(one_batch)
+    			if num_of_bullet == 0:
+    				self.bullet_batch.remove(one_batch)
 
-'''
+	def is_collided(self,target):
+		for one_batch in self.bullet_batch:
+			crush_index = target.collidelist(one_batch)
+			if crush_index != -1:
+				return True
+			else:
+				return False    	
+
 
 def in_the_rect(position,bound =[320,480]):
-    x_bound,y_bound = bound
-    x,y = position
-    if x>=0 and x <= x_bound and y >=0 and y <=y_bound:
-        return True
-    else:
-        return False
+    	x_bound,y_bound = bound
+    	x,y = position
+    	if x>=0 and x <= x_bound and y >=0 and y <=y_bound:
+        	return True
+    	else:
+        	return False
 
 def out_of_screen(rect,bound=[320,480]):
 	topleft = rect.topleft
